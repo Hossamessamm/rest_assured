@@ -1,53 +1,62 @@
 package restAssured;
 
+import com.github.javafaker.Faker;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.testng.annotations.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
+import static org.testng.Assert.assertTrue;
 
 public class test_api {
-    Map<String, String> headers = new HashMap<>();
+//    String phone = "+201235887335";
+    Faker faker = new Faker();
+    String phone = faker.numerify("+2011########");
+    String name = faker.name().firstName();
 
-
-//    String name = "Tessst";
-    String phone = "+201234565555";
-    int otp = 1000;
     @Test
-    public void register()
-    {
-//        headers.put("DeviceKey","123");
-//        headers.put("DeviceType","ios");
-        headers.put("Accept","application/json");
+    public void register(){
+        Map<String, String> headers1 = new HashMap<>();
+        headers1.put("DeviceKey","123");
+        headers1.put("DeviceType","ios");
+        headers1.put("Accept","application/json");
         Response response =
                 given()
                         .baseUri("https://laundrydashboard.otloob.net/api/v1")
-                        .headers(headers)
+                        .headers(headers1)
                         .contentType(ContentType.JSON)
-                        .body("{\"mobile\" : \"" + phone + "\", \"otp\" : \"" + otp + "\"}")
-                        .log().all()
+                        .body("{\"name\" : \"" + name + "\", \"mobile\" : \"" + phone + "\"}")
                 .when()
-                        .post("/verify-mobile/otp")
-                .then()
-                        .log().all()
-                        .extract().response();
-
+                        .post("/register");
         if(response.statusCode() != 200) {
             throw new RuntimeException("Something went wrong with this request");
         }
-
-        String token = response.path("data['access'][token]");
+    }
+    @Test
+    public void verify() {
+        int otp = 1000;
+        Map<String, String> headers2 = new HashMap<>();
+        headers2.put("Accept", "application/json");
+        Response response =
+                given()
+                        .baseUri("https://laundrydashboard.otloob.net/api/v1")
+                        .headers(headers2)
+                        .contentType(ContentType.JSON)
+                        .body("{\"mobile\" : \"" + phone + "\", \"otp\" : \"" + otp + "\"}")
+                        .when()
+                        .post("/verify-mobile/otp");;
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("Something went wrong with this request");
+        }
+        System.out.println(name);
+        System.out.println(phone);
+        String token = response.jsonPath().getString("data['access']['token']");
         System.out.println(token);
-//        System.out.println(name);
-//        accessToken = response.path("access['token']]");
-//        userID = response.path("userID");
-//        name = response.path("data['user'][first_name]");
-//
-//        System.out.println(name);
-//        System.out.println(accessToken);
     }
 }
